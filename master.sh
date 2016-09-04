@@ -31,6 +31,13 @@ export KUBE_PROVISIONER=""
 export KUBE_SERVICE_CIDR="10.0.0.0/16"
 export KUBE_CLUSTER_CIDR="10.32.0.0/12"
 
+CWD=`pwd`
+
+if [ ! -f ${CWD}/dashboard.yaml ]; then
+    echo "${CWD}/dashboard.yaml not found"
+    exit 1
+fi
+
 mkdir -p ${KUBE_BIN}
 cd ${KUBE_BIN}
 
@@ -119,6 +126,15 @@ echo "Launching Kubernetes scheduler"
 sudo sh -c 'nohup '${KUBE_BIN}'/kube-scheduler \
     --master="'${KUBE_API_ADDR}':8080" \
     > kube-scheduler.out 2>&1 &'
+
+sleep 3
+
+echo "Creating the dashboard"
+cd ${CWD}
+cp dashboard.yaml /tmp/dashboard.yaml
+grep -rl '#daemon' /tmp/dashboard.yaml | xargs sed -i 's/KUBE_API_ADDR/'${KUBE_API_ADDR}'/g'
+${KUBE_BIN}/kubectl create -f /tmp/dashboard.yaml
+rm -f /tmp/dashboard.yaml
 
 sleep 3
 
